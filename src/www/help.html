@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Help</title>
+  <style type='text/css'>
+    html { margin: 4px; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+
+<p>
+  Tiny-tools is composed of four pages:
+  <a href='#browser'>Browser</a>,
+  <a href='#editor'>Editor</a>,
+  <a href='#shell'>Shell</a>,
+  <a href='#upload'>Upload</a>.
+</p>
+
+
+
+<div>
+  <a name='browser'>
+  <h2>Browser</h2>
+
+  <p>
+    The Browser page allows navigating amongst directories.
+  </p>
+
+  <p>
+    The current directory is shown at the top of the page. Navigating to a new
+    directory will change the directory that is used for the Editor, Upload,
+    and Shell pages.
+  </p>
+
+  <p>
+    The files and directories in the current directory are shown.
+    Clicking the '..' link will move to the parent directory. Clicking on a
+    subdirectory name will change to that subdirectory.
+  </p>
+
+  <p>
+    Clicking the name of a file will display the contents of the file. If the
+    file extension is '.htm' or '.html' the file will be displayed as HTML.
+  </p>
+
+  <p>
+    Each file has an 'Edit' and a 'DL' link next to it. Clicking the 'Edit'
+    link will open the file for editing on the Editor page. Clicking the 'DL'
+    link will download the file.
+  </p>
+
+  <p>
+    Clicking 'Show Hidden' or 'Hide Hidden' toggles showing hidden files.
+  </p>
+
+</div>
+
+
+
+<div>
+  <a name='editor'>
+  <h2>Editor</h2>
+
+  <p>
+    The Editor page allows editing text files.
+  </p>
+
+  <p>
+    Entering the absolute path to a filename in the textbox and then clicking
+    'Open' will display the file contents in the textarea. If the filename
+    has no path component (i.e. it does not contain a '/') the filename will be
+    appended to the current directory.
+  </p>
+
+  <p>
+    If the Editor is opened from the Browser page the name of the text file
+    will be shown in the textbox and the contents of the file will be shown
+    in the textarea.
+  </p>
+
+  <p>
+    Clicking the 'Save' button will write the contents of the textarea to the
+    filename specified in the textbox. If the path or filename in the textbox
+    is modified, the contents of the textarea will be written to the new,
+    modified name; all directories in the path must already exist.
+  </p>
+
+  <p>
+     When saving, the original file is deleted and then re-written. If an
+     unexpected error occurs the file might not be fully re-written. For
+     maximum safety to avoid data loss, either specify a new name to save to
+     or use the Shell page to make a back-up of the file before editing.
+  <p>
+
+  </p>
+    In some environments, after clicking 'Save', the request that the browser
+    sends to the server will never complete and the browser will continuously
+    'spin' as it waits for a reply that will never come. If this happens,
+    stop/cancel the request. This will cause the the submitted data to be
+    saved. Editing can then proceed, as normal.
+  </p>
+
+  <p>
+    The 'Assist' button exists for browsers that do not accept keys like Enter
+    or Tab. In many browsers, pressing Tab moves the focus to the next form
+    field rather than inserting a Tab character. Clicking the 'Assist' button
+    will toggle the display of the assist-controls. The assist-controls provide
+    crude cursor-control and the ability to insert any character into the text
+    area.
+  </p>
+
+  <p>
+    Clicking '&lt;&lt;' will cause the cursor to move backward N characters.
+    Clicking '&gt;&gt;' will cause the cursor to move forward N characters.
+    The value of N is specified in the textbox separating the two buttons.
+  </p>
+
+  <p>
+    The 'Enter', 'Tab', and 'Any' buttons can be used to insert an Enter
+    character, a Tab character, or any character (respectively), into the
+    textarea. The Enter and Tab buttons have a text box to the left of them.
+    When the 'Enter' button is clicked, whatever string is in its textbox will
+    be searched for the textarea. Each time the string is found, it will be
+    replaced with a newline character.
+  </p>
+
+  <p>
+    The 'Tab' button works in a similar manner. When the 'Tab' button is clicked,
+    whatever string is in its textbox will be searched for in the textarea. Each
+    time the string is found, it will be replaced with the tab character.
+  </p>
+
+  <p>
+    The 'Any' button allows any character to be inserted into the textarea. The
+    'Any' button has two text boxes to the left of it. The left textbox
+    specifies the string to search for. The right textbox specifies the ASCII
+    code (1-255) which will replace the string. The 'Any' button can also be
+    used to insert an Enter character or a Tab character. The 'Enter' and 'Tab'
+    buttons exist only for convenience.
+  </p>
+
+</div>
+
+
+<div>
+  <a name='shell'>
+  <h2>Shell</h2>
+
+  <p>
+    The Shell page allows simple commands to be executed, as if they were
+    entered in a real terminal.
+  </p>
+
+  <p>
+    <b>IMPORTANT:</b> Only execute commands that will complete without needing
+    any other input from the user. Programs such as 'top' and 'vi' should not
+    be run unless they are run in such a way that they terminate without
+    additional user input. E.g., '<tt>top -n 1</tt>' or
+    '<tt>printf "iHello World!\x1b:wq\n" | vi hw.txt</tt>'.
+  </p>
+
+  <p>
+    The current directory is shown at the top of the page. To change to a new
+    directory, type 'cd' followed by exactly one space, followed by the new
+    directory name. (Or navigate to a new directory on the Browser page.)
+    Changing to a new directory will change the directory that is used for the
+    Editor, Browser, and Upload pages.
+  </p>
+
+  <p>
+    Below the directory is a text box where commands may be entered. The
+    results of the command will be shown in the area below the text box. (When
+    running under ShServer, any errors from the command may appear above the
+    header.)
+  </p>
+
+  <p>
+    There are three methods for executing (submitting) whatever is entered in
+    the text box:
+    <ul>
+      <li>Press Enter.</li>
+      <li>Click the Run button.</li>
+      <li>Type three consecutive spaces after the command. This method is
+      supported for browsers where the Enter key is ignored.</li>
+    </ul>
+  </p>
+
+  <p>
+    Each submitted command line is run in a new shell so any variable or alias
+    that is set will not be retained between submissions. If needed, they
+    can be set in a script (on the server) which is run prior to the commands
+    that need them. (e.g. '<tt>set_vars.sh; cmd1; cmd2</tt>')
+  </p>
+
+  <p>
+    The Shell does not provide any command history, however many browsers will
+    display entries that were previously typed into the text box.
+  </p>
+
+</div>
+
+
+
+
+<div>
+  <a name='upload'>
+  <h2>Upload</h2>
+
+  <p>
+    The Upload page enables uploading a file to the remote computer.
+  </p>
+
+  <p>
+    The current directory of the remote computer is displayed at the top of the
+    page. Uploaded files will be saved into this directory.
+  </p>
+
+  <p>
+    Directly below the display of the current directory is a button. The label
+    on the button depends on what browser is being used. Clicking the button
+    allows selecting a file on the local computer.
+  </p>
+
+  <p>
+    Clicking the 'Upload' button will upload the selected file to the remote
+    computer.
+  </p>
+
+  <p>
+    The uploaded file MUST be a textual file. This means the file must be plain
+    text, uuencoded, base64-encoded, or some other text-encoding such as
+    hex-encoded or oct-encoded. Uploading a binary file will fail.
+  </p>
+
+  <p>
+    If the uploaded file is not plain text and has been text-encoded (base64,
+    uuencoded, hex, oct), it will be automatically decoded after it is
+    uploaded. To prevent decoding the file, uncheck the 'Decode' button.
+  </p>
+
+  <p>
+    If the uploaded file has an extension, the decoded file will not have the
+    extension. If the uploaded file does not have an extension, the decoded
+    file will have '.out' appended to it. In either case, the decoded file will
+    overwrite any file with the same name.
+  </p>
+
+  <p>
+    For decoding uuencoded or base64-encoded files, the appropriate program for
+    decoding (uudecode or base64, respectively) must exist on the remote
+    computer. No external programs are needed for decoding hex-encoded or
+    oct-encoded files.
+  </p>
+
+</div>
+
+</body>
+</html>
+

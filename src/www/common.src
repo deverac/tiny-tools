@@ -1,0 +1,235 @@
+
+# ===== BEGIN COMMON CODE =====
+
+toBin() {
+  case "$1" in
+    0) echo "0000";;
+    1) echo "0001";;
+    2) echo "0010";;
+    3) echo "0011";;
+    4) echo "0100";;
+    5) echo "0101";;
+    6) echo "0110";;
+    7) echo "0111";;
+    8) echo "1000";;
+    9) echo "1001";;
+    a|A) echo "1010";;
+    b|B) echo "1011";;
+    c|C) echo "1100";;
+    d|D) echo "1101";;
+    e|E) echo "1110";;
+    f|F) echo "1111";;
+  esac
+}
+
+toOct() {
+  case $1 in
+    000) echo "0";;
+    001) echo "1";;
+    010) echo "2";;
+    011) echo "3";;
+    100) echo "4";;
+    101) echo "5";;
+    110) echo "6";;
+    111) echo "7";;
+  esac
+}
+
+
+encodeUrl() {
+  OLDIFS="$IFS"
+  IFS=' '
+  DSTR=
+  for ch in $(echo "$1" | sed -e 's/ /+/g' -e 's_\(.\)_\1 _g' -e 's/[\\]/\\\\/g'); do
+    case "$ch" in
+      [A-Za-z0-9_/.+]) DSTR="$DSTR$ch";;
+      \\\\)  DSTR="${DSTR}%5C" ;;
+      *) DSTR="${DSTR}$ch"
+    esac
+  done
+  IFS="$OLDIFS"
+  echo "$DSTR"
+}
+
+# Decode a URL.
+# $1: An ecoded URL.
+# If xargs is available and if echo supports decoding hex values, the
+# toBin() and toOct() functions can be deleted and the decodeUrl()
+# function can be replaced with:
+#    echo "$1" | sed -e 's/+/ /g' -e 's_%_\\\\x_g' | xargs echo -e
+decodeUrl() {
+  S=0
+  OLDIFS="$IFS"
+  IFS=' '
+  DSTR=
+  # Characters MUST be quoted, otherwise the shell expands wildcards.
+  for qvar in $(echo "$1" | sed -e "s_\(.\)_'\1' _g"); do
+    ch=$(eval "echo $qvar") # Remove quotes, for simplicity.
+
+    case $S in
+    0) if [ "$ch" = "%" ]; then S=1
+       elif [ "$ch" = "+" ]; then DSTR="$DSTR " # Append space
+       else DSTR="$DSTR$ch"
+       fi ;;
+    1) BIN=0$(toBin $ch);
+       S=2;;
+    2) unset OCT
+       for tri in $(echo $BIN$(toBin $ch) | sed -e 's_\(...\)_\1 _g'); do
+         OCT=$OCT$(toOct $tri)
+       done
+       if [ "$OCT" = "046" ]; then
+           DSTR="${DSTR}&"
+       elif [ "$OCT" = "012" ]; then
+           DSTR="${DSTR}\\n"
+       else
+           DSTR="${DSTR}\\$OCT"
+       fi
+       S=0
+       ;;
+     esac
+    done
+    IFS="$OLDIFS"
+    # The busybox ash shell automatically interprets backslashes.
+    # The dash shell requires -e to interpret backslashes.
+    E_PARM="-e"
+    if echo -e "A" | grep -q -- '-e'; then
+        E_PARM=
+    fi
+    echo $E_PARM "$DSTR"
+}
+
+
+# Read POSTed data from stdin and set form fields.
+# If a form with a "type='file'" is submitted, the file contents will be saved
+# to a temporary file.
+# If a form field name begins with 'data', its value will be saved to a temp
+# file. This is intended to handle TEXTAREA form fields.
+# In either case, the name of the temp file will be the value of $POSTVAR_xxx
+# where xxx is the form field name.
+decodeMultipartPost() {
+  OUTFIL=
+  if [ ! -z "$CONTENT_LENGTH" ]; then
+
+    # -r Do not interpret backslashes
+    read -r BNDY_RAW # Read the boundary (on first line).
+    BNDY=$(echo "$BNDY_RAW" | sed -e 's/.$//' ) # Remove '\r' at end of line.
+
+    VAR_NM=
+    BUF=
+    FIN=0
+    while [ $FIN = "0" ]; do
+
+        # Clear IFS prior to reading to preserve (e.g.) leading spaces on line.
+        IFS= read -r LIN
+
+        if echo $LIN | grep -q "; name="; then
+            VAR_NM=$(echo $LIN | sed -e 's/.ontent-.isposition: form-data; name="\([^;]*\)".*/\1/')
+            OUTFIL=
+            if echo $LIN | grep -q "; filename="; then
+                OUTFIL=$(echo $LIN | sed -e 's/.ontent-.isposition: form-data;.*; filename="\(.*\)".*/\1/')
+            elif echo $VAR_NM | grep -q "^data"; then
+                OUTFIL="tmp_${VAR_NM}"
+            fi
+
+            if [ ! -z $OUTFIL ]; then
+                # File is saved to whatever directory the user is in.
+                eval "POSTVAR_${VAR_NM}=\"$OUTFIL\""
+                rm -f "$OUTFIL"  # Delete file, if it exists.
+            fi
+        fi
+
+
+        if echo $LIN | grep -q -- $BNDY; then
+            # We got a boundary line, save buffer to variable name. Reset variables.
+            if [ ! -z $VAR_NM ]; then
+                if [ -z "$OUTFIL" ]; then
+                    eval "POSTVAR_${VAR_NM}=\"$BUF\""
+                fi
+            fi
+            BUF=
+            SAVE_LIN=
+            VAR_NM=
+            OUTFIL=
+        fi
+
+        # If we are saving the line, write it to a file, or append it to buffer.
+        if [ ! -z $SAVE_LIN ]; then
+            if [ ! -z "$OUTFIL" ]; then
+                echo "$LIN" >> "$OUTFIL"
+            else
+                TMP="$(echo "$LIN" | sed -e 's/.$//')" # Remove '\r' at end of line.
+                if [ -z "$BUF" ]; then
+                    BUF="$TMP"
+                else
+                    BUF="${BUF}\n${TMP}"
+                fi
+            fi
+        fi
+
+        # If we read a 'blank' line, start saving whatever follows.
+        if [ ! -z $VAR_NM ]; then
+            if [ "${#LIN}" -lt 3 ]; then
+                SAVE_LIN=1
+            fi
+        fi
+
+        # If we read the terminal record, we are done.
+        if echo $LIN | grep -q -- ${BNDY}.*--; then # Final ends with '--'
+            FIN=1
+        fi
+    done
+
+  fi
+
+  BUF=
+  FIN=
+  OUTFIL=
+  SAVE_LIN=
+  VAR_NM=
+}
+
+# Print a header of links to Shell, Browser, Editor, Upload, Help.
+# $1: Lowercase name of the page to display; it will not be a link. (Required)
+# $2: Unencoded directory to include in each link. (Optional)
+printHeader() {
+  # RAW_DIR and DT are assumed to have been defined.
+  if [ -z "$2" ]; then
+      ENC_DIR="$RAW_DIR"
+  else
+      ENC_DIR=$(encodeUrl "$2")
+  fi
+  QPARMS="?dir=$ENC_DIR&amp;dt=$DT"
+  echo "<p>"
+
+  if [ "$1" = "shell" ]; then
+    echo "  <b class='hdr'>Shell</b>"
+  else
+    echo "  <a class='hdr' href='/index.cgi$QPARMS'>Shell</a>"
+  fi
+
+  if [ "$1" = "browser" ]; then
+    echo "  <b class='hdr'>Browser</b>"
+  else
+    echo "  <a class='hdr' href='/browser.cgi$QPARMS'>Browser</a>"
+  fi
+
+  if [ "$1" = "editor" ]; then
+    echo "  <b class='hdr'>Editor</b>"
+  else
+    echo "  <a class='hdr' href='/editor.cgi$QPARMS'>Editor</a>"
+  fi
+
+  if [ "$1" = "upload" ]; then
+    echo "  <b class='hdr'>Upload</b>"
+  else
+    echo "  <a class='hdr' href='/upload.cgi$QPARMS'>Upload</a>"
+  fi
+
+  echo "  <a class='hdr' href='/help.html'>Help</a>"
+  echo "</p>"
+}
+
+# A unique-ish value.
+DT=$(cat /proc/uptime | sed -e 's/[ .]//g')
+
+# ===== END COMMON CODE =====
