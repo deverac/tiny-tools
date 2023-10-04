@@ -45,44 +45,45 @@ might be useful is some situations.
    to save POSTed data to the same file in order to avoid constantly creating
    temporary files that it never deletes.
 
+```
+#!/bin/sh
+set -e
 
-    #!/bin/sh
-    set -e
+# This script is more interesting than useful. There are easier, faster,
+# and better ways to accomplish what this script does.
+#
+# This script converts a file containing two-character hex-values,
+# separated by spaces, to their binary equivalents.
+#
+# sed, and only sed, is used. No other tool, like echo or cat, is used.
+# As a consequence of using sed, a final newline character (0x0a) will be
+# appended to the end of the output file. The final newline will
+# not affect the functionality of the executable, but will cause
+# programs like diff, md5sum, and sha256sum to return differing values
+# from the original executable.
+#
+# The success of this script depends on sed being able to interpret
+# escaped values (e.g. '\n', '\x41').
+#
+#
+# To convert a binary file to a file of two-character hex-values:
+#     hexdump -v -C file.bin | cut -b 11-58 > data.hex
 
-    # This script is more interesting than useful. There are easier, faster,
-    # and better ways to accomplish what this script does.
-    #
-    # This script converts a file containing two-character hex-values,
-    # separated by spaces, to their binary equivalents.
-    #
-    # sed, and only sed, is used. No other tool, like echo or cat, is used.
-    # As a consequence of using sed, a final newline character (0x0a) will be
-    # appended to the end of the output file. The final newline will
-    # not affect the functionality of the executable, but will cause
-    # programs like diff, md5sum, and sha256sum to return differing values
-    # from the original executable.
-    #
-    # The success of this script depends on sed being able to interpret
-    # escaped values (e.g. '\n', '\x41').
-    #
-    #
-    # To convert a binary file to a file of two-character hex-values:
-    #     hexdump -v -C file.bin | cut -b 11-58 > data.hex
+INFIL=data.hex
+OUTFIL=out.bin
 
-    INFIL=data.hex
-    OUTFIL=out.bin
+rm -f "$OUTFIL"
+(
+    while read LIN; do
+        for ch in $LIN; do
+            # 'bogusCmd' is ignored; sed is used to output binary values.
+            "bogusCmd" 2>&1 | sed -e "s/.*/\x$ch/"
+        done
+    done < "$INFIL"
+) | sed -e '/^$/{n;d}' | sed -e 's/^$/x_NEWLINE_x/g' | sed -e ':x; /$/{N; s/\n//; bx}' | sed -e 's/x_NEWLINE_x/\n/g' > "$OUTFIL"
 
-    rm -f "$OUTFIL"
-    (
-        while read LIN; do
-            for ch in $LIN; do
-                # 'bogusCmd' is ignored; sed is used to output binary values.
-                "bogusCmd" 2>&1 | sed -e "s/.*/\x$ch/"
-            done
-        done < "$INFIL"
-    ) | sed -e '/^$/{n;d}' | sed -e 's/^$/x_NEWLINE_x/g' | sed -e ':x; /$/{N; s/\n//; bx}' | sed -e 's/x_NEWLINE_x/\n/g' > "$OUTFIL"
-
-    # sed -e '/^$/{n;d}'              # Convert each pair of empty lines to one.
-    # sed -e 's/^$/x_NEWLINE_x/g'     # Replace empty lines with 'x_NEWLINE_x'
-    # sed -e ':x; /$/{N; s/\n//; bx}' # Join all lines, removing newlines.
+# sed -e '/^$/{n;d}'              # Convert each pair of empty lines to one.
+# sed -e 's/^$/x_NEWLINE_x/g'     # Replace empty lines with 'x_NEWLINE_x'
+# sed -e ':x; /$/{N; s/\n//; bx}' # Join all lines, removing newlines.
     # sed -e 's/x_NEWLINE_x/\n/g'     # Replace 'x_NEWLINE_x' with a newline.
+```
