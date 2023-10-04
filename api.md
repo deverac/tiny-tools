@@ -61,61 +61,62 @@ work-arounds can be used:
    the server. This behavior is not desirable, but can be 'good enough' in some
    situations.
 
+```
+#!/bin/sh
+set -e
 
-    #!/bin/sh
+# If the browser never receives a response after clicking 'Submit POST',
+# then the shServer is not able to process 'application/x-www-form-encoded'
+# POST requests in a normal manner.
+
+# Include common functions.
+. ./common.src
+
+LIN=
+if [ "x$REQUEST_METHOD" = "xPOST" ]; then
+    # Temporarily disable exit-on-error because when running under a real web
+    # server (e.g. thttpd), read exits with an error due to reading EOF.
+    set +e
+    read -r LIN
     set -e
+elif [ "x$REQUEST_METHOD" = "xGET" ]; then
+    LIN="$QUERY_STRING"
+fi
 
-    # If the browser never receives a response after clicking 'Submit POST',
-    # then the shServer is not able to process 'application/x-www-form-encoded'
-    # POST requests in a normal manner.
+# Parse the submitted values.
+OLDIFS=$IFS
+IFS="&"
+for KEYVAL in $LIN; do
+    case "$KEYVAL" in
+        act=*) ACT=$(echo "$KEYVAL" | cut -b 5-);;
+        dir=*) RAW_DIR=$(echo "$KEYVAL" | cut -b 5-);;
+        name=*) RAW_NAME=$(echo "$KEYVAL" | cut -b 6-);;
+    esac
+done
+IFS=$OLDIFS
 
-    # Include common functions.
-    . ./common.src
-
-    LIN=
-    if [ "x$REQUEST_METHOD" = "xPOST" ]; then
-      # Temporarily disable exit-on-error because when running under a real web
-      # server (e.g. thttpd), read exits with an error due to reading EOF.
-      set +e
-      read -r LIN
-      set -e
-    elif [ "x$REQUEST_METHOD" = "xGET" ]; then
-      LIN="$QUERY_STRING"
-    fi
-
-    # Parse the submitted values.
-    OLDIFS=$IFS
-    IFS="&"
-    for KEYVAL in $LIN; do
-      case "$KEYVAL" in
-         act=*) ACT=$(echo "$KEYVAL" | cut -b 5-);;
-         dir=*) RAW_DIR=$(echo "$KEYVAL" | cut -b 5-);;
-         name=*) RAW_NAME=$(echo "$KEYVAL" | cut -b 6-);;
-      esac
-    done
-    IFS=$OLDIFS
-
-    echo "Content-type: text/html; charset=utf-8"
-    echo "Cache-Control: no-store"
-    echo "Expires: 0" # Expire immediately
-    echo "" # Empty line is required
-    echo "<!DOCTYPE html><html><head><title>TTDemo</title></head>"
-    echo "<body>"
-    echo "<p>Example GET and 'application/x-www-form-urlencoded' POST.</p>"
-    echo "Submitted data: $LIN<br>"
-    echo "<pre style='border: 1px solid black'>"
-    echo "PARSED VALUES"
-    echo "    Act: $(decodeUrl $ACT)"
-    echo "    Dir: $(decodeUrl $RAW_DIR)"
-    echo "   Name: $(decodeUrl $RAW_NAME)"
-    echo "</pre>"
-    echo "<form action='/$0' method='GET' style='border: 1px solid black'>"
-    echo "  Dir: <input name='dir' value='GET dir' /><br>"
-    echo "  Act: <input type='submit' name='act' value='Submit GET' />"
-    echo "</form><br>"
-    echo "<form action='/$0' method='POST' style='border: 1px solid black'>"
-    echo "  Name: <input name='name' value='POST name' /><br>"
-    echo "  Act: <input type='submit' name='act' value='Submit POST' />"
-    echo "</form>"
-    echo "</body>"
-    echo "</html>"
+echo "Content-type: text/html; charset=utf-8"
+echo "Cache-Control: no-store"
+echo "Expires: 0" # Expire immediately
+echo "" # Empty line is required
+echo "<!DOCTYPE html><html><head><title>TTDemo</title></head>"
+echo "<body>"
+echo "<p>Example GET and 'application/x-www-form-urlencoded' POST.</p>"
+echo "Submitted data: $LIN<br>"
+echo "<pre style='border: 1px solid black'>"
+echo "PARSED VALUES"
+echo "    Act: $(decodeUrl $ACT)"
+echo "    Dir: $(decodeUrl $RAW_DIR)"
+echo "   Name: $(decodeUrl $RAW_NAME)"
+echo "</pre>"
+echo "<form action='/$0' method='GET' style='border: 1px solid black'>"
+echo "  Dir: <input name='dir' value='GET dir' /><br>"
+echo "  Act: <input type='submit' name='act' value='Submit GET' />"
+echo "</form><br>"
+echo "<form action='/$0' method='POST' style='border: 1px solid black'>"
+echo "  Name: <input name='name' value='POST name' /><br>"
+echo "  Act: <input type='submit' name='act' value='Submit POST' />"
+echo "</form>"
+echo "</body>"
+echo "</html>"
+```
