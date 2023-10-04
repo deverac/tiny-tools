@@ -38,7 +38,7 @@ shServer were designed to run under busybox v1.10.4 `ash`, `dash` v0.5.11, and
    worry about.
 
  * Only a handful of common, external programs are needed. With a bit of
-   [creative scripting](mintools.md), the number of external programs could
+   [creative scripting](mintool.md), the number of external programs could
    be reduced to three: `ls`, `nc`, and `sed`.
 
  * No install needed. Tiny-tools and shServer can run from a thumb-drive.
