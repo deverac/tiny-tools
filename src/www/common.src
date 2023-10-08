@@ -134,7 +134,7 @@ decodeMultipartPost() {
             if [ ! -z $OUTFIL ]; then
                 # File is saved to whatever directory the user is in.
                 eval "POSTVAR_${VAR_NM}=\"$OUTFIL\""
-                rm -f "$OUTFIL"  # Delete file, if it exists.
+                cat /dev/null > "$OUTFIL"  # Truncating preserves file permissions.
             fi
         fi
 
