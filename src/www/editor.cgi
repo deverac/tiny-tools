@@ -49,7 +49,7 @@ if [ "x$ACT" = "xSave" ]; then
   if [ -f "$DATA_FIL" ]; then
     if [ ! -z "$FNAME" ]; then
         # Perform 'cp $DATA_FIL $FNAME' without using cp.
-        rm -f "$FNAME"
+        cat /dev/null > "$FNAME" # Truncating preserves file permissions.
         # Clear IFS before read to preserve (e.g) leading whitespace on lines.
         while IFS= read -r LIN; do
             # To save LIN, use cat with EOF, rather than echo.
