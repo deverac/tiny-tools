@@ -60,6 +60,9 @@ $LIN
 EOF
         done < "$DATA_FIL"
         rm -f "$DATA_FIL"
+        # Per HTTP spec, all lines end with CRLF. Remove CR (^M) from lines.
+        # (This means editor cannot save files in DOS format.)
+        sed -i 's/.$//g' "${FNAME}"
     fi
   fi
 fi
